@@ -1,0 +1,374 @@
+// ============================================================
+// LUMINA — Esquema de Prisma (PostgreSQL + pgvector)
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector"), uuid_ossp(map: "uuid-ossp")]
+}
+
+// ============================================================
+// ENUMERACIONES
+// ============================================================
+
+enum Rol {
+  ESTUDIANTE
+  INSTRUCTOR
+  ADMINISTRADOR
+}
+
+enum EstadoCurso {
+  BORRADOR
+  PUBLICADO
+  ARCHIVADO
+}
+
+enum TipoLeccion {
+  VIDEO
+  LECTURA
+  CUESTIONARIO
+}
+
+enum EstadoMatricula {
+  ACTIVA
+  COMPLETADA
+  ABANDONADA
+}
+
+enum EstadoIntento {
+  EN_PROGRESO
+  COMPLETADO
+}
+
+enum TipoNotificacion {
+  ACTUALIZACION_CURSO
+  RESULTADO_CUESTIONARIO
+  RETROALIMENTACION_IA
+  SISTEMA
+}
+
+// ============================================================
+// USUARIOS
+// ============================================================
+
+model Usuario {
+  id                   String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  correo               String   @unique
+  contrasenaHash       String?
+  nombreCompleto       String
+  urlAvatar            String?
+  rol                  Rol      @default(ESTUDIANTE)
+  estaVerificado       Boolean  @default(false)
+  proveedorOauth       String?
+  idOauth              String?
+  creadoEn             DateTime @default(now())
+  actualizadoEn        DateTime @updatedAt
+
+  perfil                 PerfilUsuario?
+  cursosCreados          Curso[]               @relation("CursosInstructor")
+  matriculas             Matricula[]
+  intentosCuestionario   IntentoCuestionario[]
+  notificaciones         Notificacion[]
+  tokensRefresco         TokenRefresco[]
+  sesionesIA             SesionIA[]
+
+  @@map("usuarios")
+}
+
+model PerfilUsuario {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuarioId     String   @unique @db.Uuid
+  biografia     String?
+  titular       String?
+  sitioWeb      String?
+  pais          String?
+  zonaHoraria   String?  @default("UTC")
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("perfiles_usuario")
+}
+
+model TokenRefresco {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuarioId String   @db.Uuid
+  token     String   @unique
+  expiraEn  DateTime
+  creadoEn  DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("tokens_refresco")
+}
+
+// ============================================================
+// CURSOS
+// ============================================================
+
+model Categoria {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nombre      String   @unique
+  slug        String   @unique
+  descripcion String?
+  urlIcono    String?
+  creadoEn    DateTime @default(now())
+
+  cursos Curso[]
+
+  @@map("categorias")
+}
+
+model Curso {
+  id            String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  instructorId  String      @db.Uuid
+  categoriaId   String?     @db.Uuid
+  titulo        String
+  slug          String      @unique
+  descripcion   String?
+  urlPortada    String?
+  estado        EstadoCurso @default(BORRADOR)
+  nivel         String?
+  idioma        String      @default("es")
+  precio        Decimal?    @db.Decimal(10, 2)
+  esGratuito    Boolean     @default(true)
+  totalHoras    Float?
+  creadoEn      DateTime    @default(now())
+  actualizadoEn DateTime    @updatedAt
+
+  instructor  Usuario         @relation("CursosInstructor", fields: [instructorId], references: [id])
+  categoria   Categoria?      @relation(fields: [categoriaId], references: [id])
+  modulos     Modulo[]
+  matriculas  Matricula[]
+  etiquetas   EtiquetaCurso[]
+
+  @@map("cursos")
+}
+
+model EtiquetaCurso {
+  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  cursoId  String @db.Uuid
+  etiqueta String
+
+  curso Curso @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+
+  @@unique([cursoId, etiqueta])
+  @@map("etiquetas_curso")
+}
+
+// ============================================================
+// MÓDULOS Y LECCIONES
+// ============================================================
+
+model Modulo {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  cursoId       String   @db.Uuid
+  titulo        String
+  descripcion   String?
+  orden         Int
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  curso     Curso     @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  lecciones Leccion[]
+
+  @@unique([cursoId, orden])
+  @@map("modulos")
+}
+
+model Leccion {
+  id            String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  moduloId      String      @db.Uuid
+  titulo        String
+  tipo          TipoLeccion
+  orden         Int
+  contenido     String?
+  urlVideo      String?
+  duracion      Int?
+  esGratuita    Boolean     @default(false)
+  creadoEn      DateTime    @default(now())
+  actualizadoEn DateTime    @updatedAt
+
+  modulo         Modulo                @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  cuestionario   Cuestionario?
+  progresos      ProgresoLeccion[]
+  incrustaciones IncrustacionLeccion[]
+
+  @@unique([moduloId, orden])
+  @@map("lecciones")
+}
+
+// ============================================================
+// CUESTIONARIOS
+// ============================================================
+
+model Cuestionario {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  leccionId      String   @unique @db.Uuid
+  puntajeMinimo  Int      @default(70)
+  limiteTiempo   Int?
+  maxIntentos    Int      @default(3)
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @updatedAt
+
+  leccion   Leccion               @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  preguntas Pregunta[]
+  intentos  IntentoCuestionario[]
+
+  @@map("cuestionarios")
+}
+
+model Pregunta {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  cuestionarioId String   @db.Uuid
+  texto          String
+  explicacion    String?
+  orden          Int
+  puntos         Int      @default(1)
+  creadoEn       DateTime @default(now())
+
+  cuestionario Cuestionario @relation(fields: [cuestionarioId], references: [id], onDelete: Cascade)
+  opciones     Opcion[]
+  respuestas   Respuesta[]
+
+  @@unique([cuestionarioId, orden])
+  @@map("preguntas")
+}
+
+model Opcion {
+  id         String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  preguntaId String  @db.Uuid
+  texto      String
+  esCorrecta Boolean @default(false)
+  orden      Int
+
+  pregunta   Pregunta    @relation(fields: [preguntaId], references: [id], onDelete: Cascade)
+  respuestas Respuesta[]
+
+  @@map("opciones")
+}
+
+// ============================================================
+// MATRÍCULAS Y PROGRESO
+// ============================================================
+
+model Matricula {
+  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuarioId     String          @db.Uuid
+  cursoId       String          @db.Uuid
+  estado        EstadoMatricula @default(ACTIVA)
+  progreso      Float           @default(0)
+  matriculadoEn DateTime        @default(now())
+  completadoEn  DateTime?
+
+  usuario   Usuario           @relation(fields: [usuarioId], references: [id])
+  curso     Curso             @relation(fields: [cursoId], references: [id])
+  lecciones ProgresoLeccion[]
+
+  @@unique([usuarioId, cursoId])
+  @@map("matriculas")
+}
+
+model ProgresoLeccion {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  matriculaId   String    @db.Uuid
+  leccionId     String    @db.Uuid
+  estaCompleta  Boolean   @default(false)
+  segundosVisto Int       @default(0)
+  completadoEn  DateTime?
+  creadoEn      DateTime  @default(now())
+
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Cascade)
+  leccion   Leccion   @relation(fields: [leccionId], references: [id])
+
+  @@unique([matriculaId, leccionId])
+  @@map("progreso_lecciones")
+}
+
+model IntentoCuestionario {
+  id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuarioId      String        @db.Uuid
+  cuestionarioId String        @db.Uuid
+  puntaje        Float?
+  aprobado       Boolean?
+  estado         EstadoIntento @default(EN_PROGRESO)
+  iniciadoEn     DateTime      @default(now())
+  completadoEn   DateTime?
+
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id])
+  cuestionario Cuestionario @relation(fields: [cuestionarioId], references: [id])
+  respuestas   Respuesta[]
+
+  @@map("intentos_cuestionario")
+}
+
+model Respuesta {
+  id                  String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  intentoId           String   @db.Uuid
+  preguntaId          String   @db.Uuid
+  opcionId            String   @db.Uuid
+  esCorrecta          Boolean
+  retroalimentacionIA String?
+  creadoEn            DateTime @default(now())
+
+  intento  IntentoCuestionario @relation(fields: [intentoId], references: [id], onDelete: Cascade)
+  pregunta Pregunta            @relation(fields: [preguntaId], references: [id])
+  opcion   Opcion              @relation(fields: [opcionId], references: [id])
+
+  @@map("respuestas")
+}
+
+// ============================================================
+// IA — INCRUSTACIONES Y SESIONES
+// ============================================================
+
+model IncrustacionLeccion {
+  id           String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  leccionId    String                 @db.Uuid
+  fragmento    String
+  incrustacion Unsupported("vector")?
+  creadoEn     DateTime               @default(now())
+
+  leccion Leccion @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+
+  @@map("incrustaciones_lecciones")
+}
+
+model SesionIA {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuarioId     String   @db.Uuid
+  cursoId       String?  @db.Uuid
+  titulo        String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("sesiones_ia")
+}
+
+// ============================================================
+// NOTIFICACIONES
+// ============================================================
+
+model Notificacion {
+  id        String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuarioId String           @db.Uuid
+  tipo      TipoNotificacion
+  titulo    String
+  cuerpo    String
+  leida     Boolean          @default(false)
+  metadatos Json?
+  creadoEn  DateTime         @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("notificaciones")
+}

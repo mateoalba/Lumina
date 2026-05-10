@@ -20,7 +20,7 @@ export default function Cursos() {
 
   useEffect(() => {
     axios
-      .get(`${process.env.NEXT_PUBLIC_CURSOS_URL}/api/cursos`)
+      .get("https://cursos-production-abeb.up.railway.app/api/cursos")
       .then((res) => setCursos(res.data.datos))
       .catch(() => setCursos([]))
       .finally(() => setCargando(false));

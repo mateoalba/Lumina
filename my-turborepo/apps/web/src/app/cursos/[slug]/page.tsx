@@ -45,7 +45,7 @@ export default function DetalleCurso({ params }: { params: { slug: string } }) {
 
   useEffect(() => {
     axios
-      .get(`${process.env.NEXT_PUBLIC_CURSOS_URL}/api/cursos/${params.slug}`)
+      .get(`https://cursos-production-abeb.up.railway.app/api/cursos/${params.slug}`)
       .then((res) => setCurso(res.data.datos))
       .catch(() => router.push("/cursos"))
       .finally(() => setCargando(false));
@@ -59,7 +59,7 @@ export default function DetalleCurso({ params }: { params: { slug: string } }) {
     }
     setMatriculando(true);
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_CURSOS_URL}/api/cursos/${curso!.id}/matricularse`,
+      await axios.post(`https://cursos-production-abeb.up.railway.app/api/cursos/${curso!.id}/matricularse`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

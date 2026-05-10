@@ -11,7 +11,7 @@ import authRutas from './rutas/auth.rutas';
 
 
 const app: express.Application = express();
-const PUERTO = process.env.PUERTO || 3001;
+const PUERTO = process.env.PORT || process.env.PUERTO || 3001;
 
 app.use(helmet());
 app.use(cors());

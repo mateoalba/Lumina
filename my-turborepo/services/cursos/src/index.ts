@@ -7,7 +7,7 @@ import helmet from 'helmet';
 import cursoRutas from './rutas/curso.rutas';
 
 const app: express.Application = express();
-const PUERTO = process.env.PUERTO || 3002;
+const PUERTO = process.env.PORT || 3002;
 
 app.use(helmet());
 app.use(cors());

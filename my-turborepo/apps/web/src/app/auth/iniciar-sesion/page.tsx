@@ -18,7 +18,7 @@ export default function IniciarSesion() {
     setCargando(true);
     setError("");
     try {
-      const res = await axios.post("http://localhost:3001/api/auth/iniciar-sesion", form);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/iniciar-sesion`, form);
       localStorage.setItem("token", res.data.datos.token);
       localStorage.setItem("usuario", JSON.stringify(res.data.datos.usuario));
       router.push("/tablero");

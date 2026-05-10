@@ -20,7 +20,7 @@ export default function Cursos() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3002/api/cursos")
+      .get(`${process.env.NEXT_PUBLIC_CURSOS_URL}/api/cursos`)
       .then((res) => setCursos(res.data.datos))
       .catch(() => setCursos([]))
       .finally(() => setCargando(false));

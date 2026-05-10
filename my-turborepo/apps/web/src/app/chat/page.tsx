@@ -39,7 +39,7 @@ export default function Chat() {
     setCargando(true);
 
     try {
-      const res = await axios.post("http://localhost:3003/api/ia/chat", {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_IA_URL}/api/ia/chat`, {
         mensajes: nuevaLista,
       });
       setMensajes([
@@ -66,7 +66,7 @@ export default function Chat() {
   return (
     <main className="min-h-screen bg-gray-950 text-white flex flex-col">
       {/* Navegación */}
-      <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between shrink-0">
         <a href="/" className="text-xl font-bold text-purple-400">✦ Lumina</a>
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -82,7 +82,7 @@ export default function Chat() {
         <div className="space-y-6">
           {mensajes.map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.rol === "usuario" ? "flex-row-reverse" : ""}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm ${
                 msg.rol === "asistente"
                   ? "bg-purple-600"
                   : "bg-gray-700"
@@ -101,7 +101,7 @@ export default function Chat() {
 
           {cargando && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-sm flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-sm shrink-0">
                 ✦
               </div>
               <div className="bg-gray-900 border border-gray-800 px-4 py-3 rounded-2xl">
@@ -118,7 +118,7 @@ export default function Chat() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-800 px-4 py-4 flex-shrink-0">
+      <div className="border-t border-gray-800 px-4 py-4 shrink-0">
         <div className="max-w-3xl mx-auto flex gap-3">
           <textarea
             value={input}
@@ -131,7 +131,7 @@ export default function Chat() {
           <button
             onClick={enviarMensaje}
             disabled={cargando || !input.trim()}
-            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 px-5 py-3 rounded-xl transition flex-shrink-0"
+            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 px-5 py-3 rounded-xl transition shrink-0"
           >
             ➤
           </button>

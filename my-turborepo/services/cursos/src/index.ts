@@ -8,6 +8,7 @@ import cursoRutas from './rutas/curso.rutas';
 
 const app: express.Application = express();
 const PUERTO = process.env.PORT || process.env.PUERTO || 3002;
+
 app.use(helmet());
 app.use(cors());
 app.use(express.json());

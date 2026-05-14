@@ -39,7 +39,7 @@ export default function Chat() {
     setCargando(true);
 
     try {
-      const res = await axios.post(`https://ia-production-dea8.up.railway.app/api/ia/chat`, {
+      const res = await axios.post(`http://localhost:3001/api/ia/chat`, {
         mensajes: nuevaLista,
       });
       setMensajes([

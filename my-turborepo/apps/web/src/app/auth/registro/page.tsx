@@ -18,7 +18,7 @@ export default function Registro() {
     setCargando(true);
     setError("");
     try {
-  const res = await axios.post("https://auth-production-5c8b.up.railway.app/api/auth/registrar", form);
+  const res = await axios.post("http://localhost:3001/api/auth/registrar", form);
       localStorage.setItem("token", res.data.datos.token);
       localStorage.setItem("usuario", JSON.stringify(res.data.datos.usuario));
       router.push("/tablero");

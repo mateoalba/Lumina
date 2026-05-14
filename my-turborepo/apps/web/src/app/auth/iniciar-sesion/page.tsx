@@ -20,7 +20,7 @@ export default function IniciarSesion() {
     setError("");
     try {
       const res = await axios.post(
-        "https://auth-production-5c8b.up.railway.app/api/auth/iniciar-sesion",
+        "http://localhost:3001/api/auth/iniciar-sesion",
         form
       );
       localStorage.setItem("token", res.data.datos.token);

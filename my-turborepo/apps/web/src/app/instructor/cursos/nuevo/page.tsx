@@ -37,12 +37,19 @@ export default function NuevoCurso() {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post("http://localhost:3002/api/cursos", form, {
+      const datos = {
+        titulo: form.titulo,
+        descripcion: form.descripcion,
+        nivel: form.nivel,
+        esGratuito: form.esGratuito,
+        ...(form.esGratuito ? {} : { precio: Number(form.precio) }),
+      };
+      const res = await axios.post("http://localhost:3002/api/cursos", datos, {
         headers: { Authorization: `Bearer ${token}` },
       });
       router.push(`/instructor/cursos/${res.data.datos.slug}`);
     } catch (err: any) {
-      setError(err.response?.data?.mensaje || "Error al crear el curso");
+      setError(err.response?.data?.mensaje || JSON.stringify(err.response?.data?.error) || "Error al crear el curso");
     } finally {
       setCargando(false);
     }

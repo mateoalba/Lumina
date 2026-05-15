@@ -177,3 +177,15 @@ export const matricularEstudiante = async (usuarioId: string, cursoId: string) =
     include: { curso: { select: { titulo: true, slug: true } } },
   });
 };
+
+
+export const publicarCurso = async (cursoId: string, instructorId: string) => {
+  const curso = await prisma.curso.findUnique({ where: { id: cursoId } });
+  if (!curso) throw new Error('Curso no encontrado');
+  if (curso.instructorId !== instructorId) throw new Error('No tienes permiso');
+
+  return prisma.curso.update({
+    where: { id: cursoId },
+    data: { estado: 'PUBLICADO' },
+  });
+};

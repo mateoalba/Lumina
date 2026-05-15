@@ -26,11 +26,26 @@ export default function InstructorDashboard() {
       router.push("/tablero"); return;
     }
     setUsuario(u);
-    axios.get("http://localhost:3002/api/cursos?estado=BORRADOR", {
-      headers: { Authorization: `Bearer ${token}` }
-    }).then(r => setCursos(r.data.datos || []))
-      .catch(() => {})
-      .finally(() => setCargando(false));
+
+    const cargarCursos = async () => {
+      try {
+        const [resBorrador, resPublicado] = await Promise.all([
+          axios.get("http://localhost:3002/api/cursos?estado=BORRADOR", {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get("http://localhost:3002/api/cursos?estado=PUBLICADO", {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        setCursos([...(resBorrador.data.datos || []), ...(resPublicado.data.datos || [])]);
+      } catch {
+        setCursos([]);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarCursos();
   }, [router]);
 
   const cerrarSesion = () => {

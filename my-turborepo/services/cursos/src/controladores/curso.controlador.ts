@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { RequestAutenticada } from '../middlewares/autenticar';
 import {
   crearCurso, obtenerCursos, obtenerCursoPorSlug,
-  crearModulo, crearLeccion, matricularEstudiante,
+  crearModulo, crearLeccion, matricularEstudiante, publicarCurso,
 } from '../servicios/curso.servicio';
 
 const esquemaCurso = z.object({
@@ -93,6 +93,19 @@ export const matricularse = async (req: RequestAutenticada, res: Response): Prom
     res.status(201).json({ exito: true, mensaje: 'Matriculado exitosamente', datos: matricula });
   } catch (error: unknown) {
     const mensaje = error instanceof Error ? error.message : 'Error al matricularse';
+    res.status(400).json({ exito: false, mensaje });
+  }
+
+};
+
+  
+export const publicar = async (req: RequestAutenticada, res: Response): Promise<void> => {
+  try {
+    const { cursoId } = req.params as { cursoId: string };
+    const curso = await publicarCurso(cursoId, req.usuario!.usuarioId);
+    res.status(200).json({ exito: true, mensaje: 'Curso publicado', datos: curso });
+  } catch (error: unknown) {
+    const mensaje = error instanceof Error ? error.message : 'Error al publicar';
     res.status(400).json({ exito: false, mensaje });
   }
 };

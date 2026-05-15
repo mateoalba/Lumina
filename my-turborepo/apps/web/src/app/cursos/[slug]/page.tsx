@@ -45,7 +45,7 @@ export default function DetalleCurso({ params }: { params: { slug: string } }) {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3001/api/cursos/${params.slug}`)
+      .get(`http://localhost:3002/api/cursos/${params.slug}`)
       .then((res) => setCurso(res.data.datos))
       .catch(() => router.push("/cursos"))
       .finally(() => setCargando(false));

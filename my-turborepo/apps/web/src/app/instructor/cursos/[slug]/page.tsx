@@ -77,6 +77,23 @@ export default function EditorCurso({ params }: { params: { slug: string } }) {
     }
   };
 
+
+  const publicarCurso = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.patch(
+      `http://localhost:3002/api/cursos/${curso!.id}/publicar`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setMensaje("¡Curso publicado exitosamente!");
+    cargarCurso(token!);
+    setTimeout(() => setMensaje(""), 3000);
+  } catch {
+    setMensaje("Error al publicar el curso");
+  }
+};
+
   const crearModulo = async () => {
     if (!formModulo.titulo.trim()) return;
     setGuardando(true);
@@ -165,6 +182,13 @@ export default function EditorCurso({ params }: { params: { slug: string } }) {
             className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition">
             Vista previa →
           </a>
+                    {curso.estado === "BORRADOR" && (
+            <button
+              onClick={publicarCurso}
+              className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition">
+              🚀 Publicar curso
+            </button>
+          )}
           <a href="/instructor" className="text-xs text-gray-400 hover:text-white transition">
             ← Dashboard
           </a>
